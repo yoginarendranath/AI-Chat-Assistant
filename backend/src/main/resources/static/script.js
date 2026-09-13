@@ -11,6 +11,7 @@ const clearBtn = document.getElementById("clearBtn");
 const conversationList = document.getElementById("conversationList");
 
 function showWelcome() {
+
     chatBox.innerHTML = `
         <div id="welcome" class="welcome">
 
@@ -50,16 +51,21 @@ function showWelcome() {
 }
 
 async function createNewChat() {
+
     try {
-        const response = await fetch("/api/chat/new");
+
+        const response =
+            await fetch("/api/chat/new");
 
         if (!response.ok) {
             throw new Error("Could not create new chat");
         }
 
-        const conversation = await response.json();
+        const conversation =
+            await response.json();
 
-        currentConversationId = conversation.id;
+        currentConversationId =
+            conversation.id;
 
         showWelcome();
 
@@ -69,15 +75,21 @@ async function createNewChat() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "New chat error:",
+            error
+        );
 
-        alert("Could not create a new chat.");
+        alert(
+            "Unable to create new chat. Make sure the backend is running."
+        );
     }
 }
 
 async function sendMessage() {
 
-    const message = messageInput.value.trim();
+    const message =
+        messageInput.value.trim();
 
     if (!message || isSending) {
         return;
@@ -96,7 +108,9 @@ async function sendMessage() {
                 await fetch("/api/chat/new");
 
             if (!response.ok) {
-                throw new Error("Could not create conversation");
+                throw new Error(
+                    "Could not create conversation"
+                );
             }
 
             const conversation =
@@ -134,15 +148,23 @@ async function sendMessage() {
         removeTypingIndicator();
 
         if (!response.ok) {
-            throw new Error("Server error");
+            throw new Error(
+                `Server returned ${response.status}`
+            );
         }
 
         const data =
             await response.json();
 
-        if (data.aiResponse) {
+        if (
+            data &&
+            data.aiResponse &&
+            data.aiResponse.trim()
+        ) {
 
-            addAIMessage(data.aiResponse);
+            addAIMessage(
+                data.aiResponse
+            );
 
         } else {
 
@@ -157,12 +179,15 @@ async function sendMessage() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Send message error:",
+            error
+        );
 
         removeTypingIndicator();
 
         addAIMessage(
-            "Sorry, something went wrong. Please check that the backend and Gemini API are running."
+            "Sorry, something went wrong. Please check that the backend, MySQL and Gemini API are running."
         );
 
     } finally {
@@ -186,9 +211,11 @@ function addUserMessage(message) {
 
     messageDiv.innerHTML = `
         <div class="message-content">
+
             <div class="message-text">
                 ${escapeHtml(message)}
             </div>
+
         </div>
     `;
 
@@ -214,9 +241,11 @@ function addAIMessage(message) {
         </div>
 
         <div class="message-content">
+
             <div class="message-text">
                 ${formattedMessage}
             </div>
+
         </div>
     `;
 
@@ -227,8 +256,15 @@ function addAIMessage(message) {
 
 function formatAIResponse(text) {
 
+    if (
+        text === null ||
+        text === undefined
+    ) {
+        return "";
+    }
+
     let safeText =
-        escapeHtml(text);
+        escapeHtml(String(text));
 
     safeText =
         safeText.replace(
@@ -279,7 +315,7 @@ function formatAIResponse(text) {
 
     safeText =
         safeText.replace(
-            /(<li>.*<\/li>)/gs,
+            /((?:<li>.*<\/li>\s*)+)/gs,
             "<ul>$1</ul>"
         );
 
@@ -309,7 +345,7 @@ function showTypingIndicator() {
         "typingIndicator";
 
     typing.className =
-        "message ai-message typing-message";
+        "message ai-message";
 
     typing.innerHTML = `
         <div class="message-avatar">
@@ -349,7 +385,9 @@ async function loadConversations() {
     try {
 
         const response =
-            await fetch("/api/chat/conversations");
+            await fetch(
+                "/api/chat/conversations"
+            );
 
         if (!response.ok) {
             throw new Error(
@@ -375,7 +413,6 @@ async function loadConversations() {
                 createConversationItem(
                     conversation
                 );
-
             }
         );
 
@@ -400,7 +437,10 @@ function createConversationItem(conversation) {
         conversation.id ===
         currentConversationId
     ) {
-        item.classList.add("active");
+
+        item.classList.add(
+            "active"
+        );
     }
 
     const title =
@@ -423,14 +463,18 @@ function createConversationItem(conversation) {
         </div>
 
         <button
+            type="button"
             class="conversation-menu"
-            title="More options">
+            title="More options"
+            aria-label="More options">
             ⋮
         </button>
 
         <div class="conversation-options">
 
-            <button class="delete-conversation">
+            <button
+                type="button"
+                class="delete-conversation">
                 🗑️ Delete
             </button>
 
@@ -464,7 +508,6 @@ function createConversationItem(conversation) {
             openConversation(
                 conversation.id
             );
-
         }
     );
 
@@ -476,23 +519,33 @@ function createConversationItem(conversation) {
 
             document
                 .querySelectorAll(
-                    ".conversation-options"
+                    ".conversation-options.show"
                 )
-                .forEach(option => {
+                .forEach(
+                    option => {
 
-                    if (
-                        option !== options
-                    ) {
-                        option.classList.remove(
-                            "show"
-                        );
+                        if (
+                            option !== options
+                        ) {
+
+                            option.classList.remove(
+                                "show"
+                            );
+                        }
                     }
-
-                });
+                );
 
             options.classList.toggle(
                 "show"
             );
+        }
+    );
+
+    options.addEventListener(
+        "click",
+        function(event) {
+
+            event.stopPropagation();
         }
     );
 
@@ -502,14 +555,19 @@ function createConversationItem(conversation) {
 
             event.stopPropagation();
 
+            options.classList.remove(
+                "show"
+            );
+
             deleteConversation(
                 conversation.id
             );
-
         }
     );
 
-    conversationList.appendChild(item);
+    conversationList.appendChild(
+        item
+    );
 }
 
 async function openConversation(
@@ -556,10 +614,8 @@ async function openConversation(
                     addAIMessage(
                         message.aiResponse
                     );
-
                 }
             );
-
         }
 
         await loadConversations();
@@ -703,36 +759,53 @@ function useSuggestion(text) {
 
 function setupVoiceRecognition() {
 
-    if (
-        "webkitSpeechRecognition"
-        in window
-    ) {
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
 
-        recognition =
-            new webkitSpeechRecognition();
+    if (!SpeechRecognition) {
 
-        recognition.continuous =
-            false;
+        voiceBtn.disabled = true;
 
-        recognition.interimResults =
-            false;
+        voiceBtn.title =
+            "Speech recognition is not supported in this browser";
 
-        recognition.lang =
-            "en-US";
+        return;
+    }
 
-        recognition.onstart =
-            function() {
+    recognition =
+        new SpeechRecognition();
 
-                voiceBtn.classList.add(
-                    "recording"
-                );
+    recognition.continuous =
+        false;
 
-                voiceBtn.innerHTML =
-                    "🔴";
-            };
+    recognition.interimResults =
+        false;
 
-        recognition.onresult =
-            function(event) {
+    recognition.lang =
+        "en-IN";
+
+    recognition.onstart =
+        function() {
+
+            voiceBtn.classList.add(
+                "listening"
+            );
+
+            voiceBtn.innerHTML =
+                "🔴";
+
+            voiceBtn.title =
+                "Listening...";
+        };
+
+    recognition.onresult =
+        function(event) {
+
+            if (
+                event.results &&
+                event.results.length > 0
+            ) {
 
                 const transcript =
                     event
@@ -743,69 +816,106 @@ function setupVoiceRecognition() {
                     transcript;
 
                 messageInput.focus();
-            };
+            }
+        };
 
-        recognition.onerror =
-            function(event) {
+    recognition.onerror =
+        function(event) {
 
-                console.error(
-                    "Voice recognition error:",
+            console.error(
+                "Speech recognition error:",
+                event.error
+            );
+
+            if (
+                event.error ===
+                "not-allowed"
+            ) {
+
+                alert(
+                    "Microphone permission is blocked. Please allow microphone access for localhost."
+                );
+
+            } else if (
+                event.error ===
+                "no-speech"
+            ) {
+
+                alert(
+                    "No speech detected. Please speak again."
+                );
+
+            } else if (
+                event.error ===
+                "audio-capture"
+            ) {
+
+                alert(
+                    "Microphone was not detected. Please check your microphone."
+                );
+
+            } else if (
+                event.error ===
+                "network"
+            ) {
+
+                alert(
+                    "Speech recognition network error. Please check your internet connection."
+                );
+
+            } else if (
+                event.error ===
+                "aborted"
+            ) {
+
+                console.log(
+                    "Speech recognition stopped."
+                );
+
+            } else {
+
+                alert(
+                    "Voice recognition error: " +
                     event.error
                 );
-
-                if (
-                    event.error ===
-                    "not-allowed"
-                ) {
-
-                    alert(
-                        "Microphone permission is required."
-                    );
-
-                } else {
-
-                    alert(
-                        "Voice recognition failed."
-                    );
-                }
-            };
-
-        recognition.onend =
-            function() {
-
-                voiceBtn.classList.remove(
-                    "recording"
-                );
-
-                voiceBtn.innerHTML =
-                    "🎤";
-            };
-
-        voiceBtn.addEventListener(
-            "click",
-            function() {
-
-                try {
-
-                    recognition.start();
-
-                } catch (error) {
-
-                    console.error(error);
-
-                }
-
             }
-        );
+        };
 
-    } else {
+    recognition.onend =
+        function() {
 
-        voiceBtn.disabled =
-            true;
+            voiceBtn.classList.remove(
+                "listening"
+            );
 
-        voiceBtn.title =
-            "Voice recognition is not supported in this browser";
-    }
+            voiceBtn.innerHTML =
+                "🎤";
+
+            voiceBtn.title =
+                "Voice input";
+        };
+
+    voiceBtn.addEventListener(
+        "click",
+        function() {
+
+            if (!recognition) {
+                return;
+            }
+
+            try {
+
+                recognition.start();
+
+            } catch (error) {
+
+                console.error(
+                    "Recognition start error:",
+                    error
+                );
+            }
+        }
+    );
 }
 
 function escapeHtml(text) {
@@ -814,6 +924,7 @@ function escapeHtml(text) {
         text === null ||
         text === undefined
     ) {
+
         return "";
     }
 
@@ -851,7 +962,6 @@ sendBtn.addEventListener(
     function() {
 
         sendMessage();
-
     }
 );
 
@@ -867,9 +977,7 @@ messageInput.addEventListener(
             event.preventDefault();
 
             sendMessage();
-
         }
-
     }
 );
 
@@ -878,7 +986,6 @@ newChatBtn.addEventListener(
     function() {
 
         createNewChat();
-
     }
 );
 
@@ -887,7 +994,6 @@ clearBtn.addEventListener(
     function() {
 
         clearCurrentHistory();
-
     }
 );
 
@@ -906,18 +1012,17 @@ document.addEventListener(
 
             document
                 .querySelectorAll(
-                    ".conversation-options"
+                    ".conversation-options.show"
                 )
-                .forEach(option => {
+                .forEach(
+                    option => {
 
-                    option.classList.remove(
-                        "show"
-                    );
-
-                });
-
+                        option.classList.remove(
+                            "show"
+                        );
+                    }
+                );
         }
-
     }
 );
 
@@ -953,7 +1058,6 @@ async function initializeApp() {
                     createConversationItem(
                         conversation
                     );
-
                 }
             );
 
